@@ -3,11 +3,57 @@ import { defineNuxtConfig } from "nuxt/config";
 
 // https://v3.nuxtjs.org/api/configuration/nuxt.config
 export default defineNuxtConfig({
-  modules: ["@unocss/nuxt", "@vueuse/nuxt", "@nuxtjs/supabase", "@nuxt/image-edge"],
+  modules: ["@unocss/nuxt", "@vueuse/nuxt", "@nuxtjs/supabase", "@nuxt/image-edge", "nuxt-electron"],
   css: ["@unocss/reset/tailwind.css", "~~/assets/main.css"],
   runtimeConfig: {
     public: {
       UMAMI_WEBSITE_ID: process.env.UMAMI_WEBSITE_ID,
+    },
+  },
+  electron: {
+    build: [
+      {
+        entry: "electron/main.ts",
+        onstart({ startup }) {
+          if (process.env.NODE_ENV !== "production") {
+            startup();
+          }
+        },
+      },
+      {
+        entry: "electron/preload.ts",
+        onstart({ reload }) {
+          if (process.env.NODE_ENV !== "production") {
+            reload();
+          }
+        },
+      },
+    ],
+  },
+  typescript: {
+    tsConfig: {
+      compilerOptions: {
+        types: ["nuxt-electron/electron-env", "./types/electron"],
+      },
+    },
+  },
+  nitro: {
+    rollupConfig: {
+      plugins: [
+        {
+          name: "nuxt-electron-unocss-empty-chunk",
+          enforce: "post",
+          load(id) {
+            if (id.includes("-styles-") && (id.endsWith(".js") || id.endsWith(".mjs"))) {
+              return {
+                code: "export default undefined;",
+                map: null,
+              };
+            }
+            return null;
+          },
+        },
+      ],
     },
   },
   unocss: {

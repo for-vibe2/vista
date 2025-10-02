@@ -4,5 +4,11 @@ node_modules
 .nitro
 .cache
 .output
+.data
+dist-electron
+release
+.sqlite
+.sqlite3
+.db
 .env
 dist
