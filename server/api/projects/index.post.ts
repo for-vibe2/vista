@@ -26,14 +26,36 @@ async function getFormData(event: H3Event): Promise<FormDataLike> {
   }
 
   const body = await (h3 as any).readBody?.(event);
-  if (body && typeof (body as FormDataLike).get === "function") {
-    return body as FormDataLike;
+
+  let parsedBody: unknown = body;
+
+  if (typeof body === "string") {
+    try {
+      parsedBody = JSON.parse(body);
+    } catch (error) {
+      try {
+        parsedBody = Object.fromEntries(new URLSearchParams(body));
+      } catch {
+        parsedBody = undefined;
+      }
+    }
+  }
+
+  if (parsedBody && typeof (parsedBody as FormDataLike).get === "function") {
+    return parsedBody as FormDataLike;
   }
 
   const entries = new Map<string, any>();
-  if (body && typeof body === "object") {
-    for (const [key, value] of Object.entries(body)) {
-      entries.set(key, value);
+  if (parsedBody && typeof parsedBody === "object") {
+    const maybeIterable = parsedBody as Iterable<[string, any]>;
+    if (typeof (maybeIterable as any)[Symbol.iterator] === "function") {
+      for (const [key, value] of maybeIterable) {
+        entries.set(key, value);
+      }
+    } else {
+      for (const [key, value] of Object.entries(parsedBody as Record<string, any>)) {
+        entries.set(key, value);
+      }
     }
   }
 
