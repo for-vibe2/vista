@@ -76,11 +76,24 @@ Yarn
    cd vista
    yarn install
    ```
-3. Set up `.env` (check `.env.example`)
-4. Run local development instance
+3. Run database migrations
+   ```sh
+   yarn migrate
+   ```
+4. Set up `.env` (check `.env.example`)
+5. Run local development instance
    ```sh
    yarn dev
    ```
+
+### Docker
+
+You can build a production container that runs the Nuxt server and SQLite migrations automatically:
+
+```sh
+docker build -t vista-sqlite .
+docker run -p 3000:3000 vista-sqlite
+```
 
 ### Supabase Database
 

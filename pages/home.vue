@@ -1,14 +1,7 @@
 <script setup lang="ts">
-const client = useSupabase();
+import type { Project } from "~/types/project";
 
-const { data } = useAsyncData(async () => {
-  const { data } = await client.from("projects").select("id, title").order("created_at", { ascending: false });
-  return data;
-});
-
-definePageMeta({
-  middleware: "auth",
-});
+const { data } = await useFetch<Project[]>("/api/projects");
 </script>
 
 <template>
@@ -17,8 +10,8 @@ definePageMeta({
     <NuxtLink class="btn-primary" to="/create">Create</NuxtLink>
 
     <div class="flex flex-col mt-12">
-      <NuxtLink class="btn-plain mb-3" v-for="item in data" :to="`/v/${item.id}`">
-        {{ item.title ?? item.id }}
+      <NuxtLink class="btn-plain mb-3" v-for="item in data || []" :key="item.id" :to="`/v/${item.id}`">
+        {{ item.title || item.id }}
       </NuxtLink>
     </div>
   </div>

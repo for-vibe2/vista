@@ -7,15 +7,12 @@ const { file, fileName, open } = useFileSystemAccess({
     {
       description: "Videos",
       accept: {
-        "video/*": [".mp4", ".avi", ".wmv"],
+        "video/*": [".mp4", ".avi", ".wmv", ".mov", ".webm"],
       },
     },
   ],
   excludeAcceptAllOption: true,
 });
-
-const user = useSupabaseUser();
-const client = useSupabase();
 
 const { el, duration, playing } = usePlayback();
 const inMemoryFile = useInMemoryFile();
@@ -28,47 +25,32 @@ const url = computed(() => (file.value ? URL.createObjectURL(file.value) : undef
 
 const progress = ref(0);
 const isProcessing = computed(() => progress.value !== 0);
-// if non login, only max 20seconds
+
 const uploadToStorage = async () => {
   if (!file.value || !title.value) return;
   try {
     progress.value = 0.2;
-    const { data: assetData } = await client.storage
-      .from("assets")
-      .upload(`${user.value?.id}/${fileName.value}`, file.value, { upsert: true });
-    const { data: transcriptionData } = await client.functions.invoke("transcribe", {
-      body: {
-        video_key: assetData?.path,
-      },
+    const form = new FormData();
+    form.append("title", title.value);
+    form.append("file", file.value, fileName.value);
+
+    const project = await $fetch<{ id: string }>("/api/projects", {
+      method: "POST",
+      body: form,
     });
-    progress.value = 0.6;
-    const { data: projectData } = await client
-      .from("projects")
-      .insert({
-        user_id: user.value?.id,
-        title: title.value,
-        video_key: assetData?.path,
-        transcription_id: transcriptionData.id,
-      })
-      .select("id")
-      .single();
 
     progress.value = 1;
-    if (projectData?.id && url.value) {
-      // save in-memory file into states
+    if (project?.id && url.value) {
       await wait(300);
-      inMemoryFile.value[projectData.id] = file.value;
-      navigateTo(`/v/${projectData.id}`);
+      inMemoryFile.value[project.id] = file.value;
+      navigateTo(`/v/${project.id}`);
     }
   } catch (err) {
+    console.error(err);
+  } finally {
     progress.value = 0;
-    console.log(err);
   }
 };
-
-definePageMeta({
-  middleware: "auth",
-});
 </script>
 
 <template>

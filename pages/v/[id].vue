@@ -1,49 +1,30 @@
 <script setup lang="ts">
-const client = useSupabase();
+import type { Project } from "~/types/project";
+
 const inMemoryFile = useInMemoryFile();
 const transcribe = useTranscription();
 const { config, resetConfig } = useConfig();
 const { message, progress, video: renderedResult } = useTranscode();
 
-const channel = client
-  .channel("public:projects")
-  .on("postgres_changes", { event: "UPDATE", schema: "public", table: "projects" }, (payload) => {
-    // @ts-ignore
-    data.value = payload.new;
-    transcribe.value = payload.new.words;
-    console.log(payload);
-  })
-  .subscribe();
-
 const video = ref<Blob | File>();
 
 const id = useRoute().params.id.toString();
-const { data, pending } = useAsyncData(id, async () => {
-  const { data } = await client.from("projects").select("*").eq("id", id).single();
 
-  // if transcription ready, remove websocket
-  if (data?.words) {
-    // @ts-ignore
-    transcribe.value = data.words;
-    client.removeChannel(channel);
-  }
-  return data;
+const { data, pending, refresh } = await useAsyncData<Project>(id, async () => {
+  return await $fetch<Project>(`/api/projects/${id}`);
 });
 
 const handleSave = async () => {
-  await client
-    .from("projects")
-    .update({
+  await $fetch(`/api/projects/${id}`, {
+    method: "PUT",
+    body: {
       // @ts-ignore
       words: transcribe.value.length ? transcribe.value : undefined,
       config: config.value,
-    })
-    .eq("id", id);
+    },
+  });
+  await refresh();
 };
-
-onUnmounted(() => {
-  client.removeChannel(channel);
-});
 
 onMounted(() => {
   const file = inMemoryFile.value[id];
@@ -51,9 +32,11 @@ onMounted(() => {
 });
 
 whenever(data, async () => {
-  if (!data.value?.video_key || inMemoryFile.value[id]) return;
-  const result = await client.storage.from("assets").download(data.value.video_key);
-  if (result.data) video.value = result.data;
+  if (!data.value?.videoPath || inMemoryFile.value[id]) return;
+  const blob = await $fetch<Blob>(`/api/projects/${id}/video`, {
+    responseType: "blob",
+  });
+  if (blob) video.value = blob;
 });
 
 watch(
@@ -62,6 +45,8 @@ watch(
     resetConfig();
     // @ts-ignore
     if (data.value?.config) config.value = data.value.config;
+    // @ts-ignore
+    transcribe.value = (data.value?.words as typeof transcribe.value | undefined) ?? [];
   },
   { immediate: true }
 );
@@ -83,10 +68,6 @@ onMounted(() => {
   window.onbeforeunload = function () {
     if (isActive.value) return "You haven't saved your changes.";
   };
-});
-
-definePageMeta({
-  middleware: "auth",
 });
 
 useCustomHead(computed(() => `Edit: ${data.value?.title ?? ""}`));

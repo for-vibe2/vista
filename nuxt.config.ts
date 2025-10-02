@@ -3,7 +3,7 @@ import { defineNuxtConfig } from "nuxt/config";
 
 // https://v3.nuxtjs.org/api/configuration/nuxt.config
 export default defineNuxtConfig({
-  modules: ["@unocss/nuxt", "@vueuse/nuxt", "@nuxtjs/supabase", "@nuxt/image-edge"],
+  modules: ["@unocss/nuxt", "@vueuse/nuxt", "@nuxt/image-edge"],
   css: ["@unocss/reset/tailwind.css", "~~/assets/main.css"],
   runtimeConfig: {
     public: {
