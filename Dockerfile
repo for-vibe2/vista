@@ -23,6 +23,7 @@ ENV NODE_ENV=production
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/yarn.lock ./yarn.lock
 COPY --from=builder /app/.yarnrc.yml ./.yarnrc.yml
+COPY --from=builder /app/.yarn ./ .yarn
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.output ./.output
 COPY --from=builder /app/server ./server
@@ -41,7 +42,9 @@ COPY --from=builder /app/tsconfig.json ./tsconfig.json
 
 RUN mkdir -p /app/data/uploads
 
-RUN yarn migrate
+RUN corepack enable \
+  && corepack prepare yarn@4.9.4 --activate \
+  && yarn migrate
 
 EXPOSE 3000
 CMD ["node", ".output/server/index.mjs"]

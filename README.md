@@ -24,7 +24,7 @@
 
 ## Story
 
-Vista is my Hackathon submission for [Supabase Launch week 6](https://supabase.com/launch-week). It was inspired by those animated subtitle while scrolling through Youtube Shorts, and I always wanted to play with [ffmpeg](https://ffmpeg.org/), and this serves as a good opportunity!
+Vista started life as a hackathon submission and was inspired by those animated subtitles while scrolling through Youtube Shorts. I always wanted to play with [ffmpeg](https://ffmpeg.org/), and this serves as a good opportunity!
 
 This ends up a super challenging task:
 
@@ -32,15 +32,9 @@ This ends up a super challenging task:
 
 2. Perform speech-to-text is not an easy task, to speed up MVP, I've utilized AssemblyAI API for the video transcription.
 
-3. Because speech-to-text is an async task, I've combined [Supabase Edge Function](https://github.com/zernonia/vista/tree/main/supabase/functions/transcribe-webhook) as webhook when the process is done, then use [Supabase Realtime](https://github.com/zernonia/vista/blob/main/pages/v/%5Bid%5D.vue#L8) to populate the subtitle.
+3. Because speech-to-text is an async task, I originally paired it with a webhook to let the UI know when a transcription is ready.
 
-## Supabase Usage
-
-1. Supabase Auth - to handle user and their storage bucket
-2. Supabase DB - to store projects data
-3. Supabase Storage - to store user's video (with policies)
-4. Supabase Realtime - to populate the UI anytime when subtitle is ready
-5. Supabase Edge Function - trigger AssemblyAI transcription, and act as webhook
+Today the app relies solely on the bundled SQLite database for persistence, so you can run it entirely locally without any Supabase services.
 
 ## 🚀 Features
 
@@ -50,7 +44,6 @@ This ends up a super challenging task:
 ### 🔨 Built With
 
 - [Nuxt 3](https://v3.nuxtjs.org/)
-- [Supabase](https://supabase.com)
 - [UnoCss](https://uno.antfu.me/)
 - [AssemblyAI](https://www.assemblyai.com/)
 - [FFmpeg.wasm](https://ffmpegwasm.netlify.app/)
@@ -59,11 +52,23 @@ This ends up a super challenging task:
 
 ### Prerequisites
 
-Yarn
+- [Node.js](https://nodejs.org/) 18 or newer (Corepack is bundled and keeps Yarn in sync with the repo)
+- [Yarn](https://yarnpkg.com/) (installed automatically by Corepack when you run the commands below)
 
-- ```sh
-  npm install --global yarn
-  ```
+### Environment variables
+
+Copy the example file and adjust any values you need:
+
+```sh
+cp .env.example .env
+```
+
+All variables are optional. The app falls back to sensible defaults when they are not set.
+
+| Variable | Description |
+| --- | --- |
+| `DATABASE_PATH` | Override the default location of the SQLite database (`./data/database.sqlite`). |
+| `UMAMI_WEBSITE_ID` | Expose your Umami website ID so production builds can report analytics. |
 
 ### Development
 
@@ -71,66 +76,33 @@ Yarn
    ```sh
    git clone https://github.com/zernonia/vista.git
    ```
-2. Install NPM packages
+2. Install dependencies
    ```sh
    cd vista
+   corepack enable
    yarn install
    ```
-3. Run database migrations
+3. Run database migrations (creates `./data/database.sqlite` on the first run)
    ```sh
    yarn migrate
    ```
-4. Set up `.env` (check `.env.example`)
-5. Run local development instance
+4. Start the local development server
    ```sh
    yarn dev
    ```
 
 ### Docker
 
-You can build a production container that runs the Nuxt server and SQLite migrations automatically:
+Build a production image that runs SQLite migrations automatically:
 
 ```sh
 docker build -t vista-sqlite .
-docker run -p 3000:3000 vista-sqlite
 ```
 
-### Supabase Database
+Provide your `.env` file (if you need to override defaults) when running the container:
 
-```sql
-create table users (
-  id uuid default uuid_generate_v4() primary key,
-  updated_at timestamp default now(),
-  username text,
-  full_name text,
-  avatar_url text
-);
-
-create table projects (
-  id uuid default uuid_generate_v4() primary key,
-  user_id uuid references users (id),
-  created_at timestamp default now(),
-  video_key text,
-  transcription_id text,
-  words ARRAY,
-  title text,
-  config json
-);
-
-
-create or replace function public.handle_new_user()
-  returns trigger as $$
-  begin
-    insert into public.users (id, avatar_url, username)
-    values (new.id, new.raw_user_meta_data->>'avatar_url', new.raw_user_meta_data->>'user_name';
-    return new;
-  end;
-  $$ language plpgsql security definer;
-
-
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute procedure public.handle_new_user();
+```sh
+docker run --rm -p 3000:3000 --env-file .env vista-sqlite
 ```
 
 ## ➕ Contributing
@@ -146,7 +118,6 @@ Contributions are what make the open source community such an amazing place to b
 ## Acknowledgement
 
 1. [Nuxt 3 - Awesome framework](https://v3.nuxtjs.org/)
-1. [Supabase - Super easy setup (as always)](https://supabase.com)
 
 ## Author
 
