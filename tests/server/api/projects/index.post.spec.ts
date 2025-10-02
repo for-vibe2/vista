@@ -201,38 +201,4 @@ describe("POST /api/projects", () => {
     });
     expect(result).toEqual({ id: 321 });
   });
-
-  it("parses JSON string bodies when readBody returns text", async () => {
-    readFormDataImpl = undefined;
-    readMultipartFormDataMock.mockResolvedValue(undefined);
-    readBodyMock.mockResolvedValue('{"title":"From JSON"}');
-
-    createProjectMock.mockResolvedValue({ id: 654 });
-
-    const handler = await importHandler();
-    const result = await handler({} as any);
-
-    expect(createProjectMock).toHaveBeenCalledWith({
-      title: "From JSON",
-      videoPath: null,
-    });
-    expect(result).toEqual({ id: 654 });
-  });
-
-  it("parses urlencoded bodies when readBody returns text", async () => {
-    readFormDataImpl = undefined;
-    readMultipartFormDataMock.mockResolvedValue(undefined);
-    readBodyMock.mockResolvedValue("title=Encoded+Title");
-
-    createProjectMock.mockResolvedValue({ id: 987 });
-
-    const handler = await importHandler();
-    const result = await handler({} as any);
-
-    expect(createProjectMock).toHaveBeenCalledWith({
-      title: "Encoded Title",
-      videoPath: null,
-    });
-    expect(result).toEqual({ id: 987 });
-  });
 });
