@@ -6,6 +6,7 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
+    "test": "vitest run",
     "migrate": "node ./server/db/migrate.mjs"
   },
   "devDependencies": {
@@ -27,6 +28,7 @@
     "html2canvas": "^1.4.1",
     "motion": "^10.15.3",
     "nuxt": "3.0.0",
+    "vitest": "^3.2.4",
     "vue3-colorpicker": "^2.0.11"
   },
   "dependencies": {
