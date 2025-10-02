@@ -1,0 +1,17 @@
+# Exclude version control and local caches
+.git
+.gitignore
+
+# Dependency directories created locally
+node_modules
+.nuxt
+.output
+
+# Environment files and editor config
+.env
+.env.*
+.vscode
+.DS_Store
+
+# Yarn cache state is generated during install
+.yarn/install-state.gz
